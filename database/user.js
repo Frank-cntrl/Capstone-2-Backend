@@ -9,6 +9,7 @@ const User = db.define("user", {
     unique: true,
     validate: {
       len: [3, 20],
+      notEmpty: true,
     },
   },
   email: {
@@ -16,31 +17,160 @@ const User = db.define("user", {
     allowNull: true,
     unique: true,
     validate: {
-      isEmail: true,
+      isEmail: {
+        msg: "Must be a valid email address"
+      },
     },
+  },
+  firstName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'first_name',
+    validate: {
+      len: [0, 50]
+    }
+  },
+  lastName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'last_name',
+    validate: {
+      len: [0, 50]
+    }
+  },
+  bio: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    validate: {
+      len: [0, 500]
+    }
+  },
+  profileImage: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'profile_image'
   },
   auth0Id: {
     type: DataTypes.STRING,
     allowNull: true,
     unique: true,
+    field: 'auth0_id'
   },
   passwordHash: {
     type: DataTypes.STRING,
     allowNull: true,
+    field: 'password_hash'
   },
+  avatarURL: {
+    type: DataTypes.STRING,
+    defaultValue: "https://static.thenounproject.com/png/5100711-200.png",
+    allowNull: false,
+  },
+  spotifyId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true,
+    field: 'spotify_id'
+  },
+  spotifyAccessToken: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'spotify_access_token'
+  },
+  spotifyRefreshToken: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'spotify_refresh_token'
+  },
+  spotifyTokenExpiresAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'spotify_token_expires_at'
+  },
+  spotifyDisplayName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'spotify_display_name'
+  },
+  spotifyProfileImage: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'spotify_profile_image'
+  },
+  profileTheme: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'default',
+    field: 'profile_theme',
+    validate: {
+      len: [1, 50] // Allow themes up to 50 characters
+    }
+  },
+  spotifyItems: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: [],
+    field: 'spotify_items'
+  },
+  showPosts: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+    field: 'show_posts'
+  },
+  showUsername: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+    field: 'show_username'
+  },
+  showDateJoined: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+    field: 'show_date_joined'
+  },
+  showSpotifyStatus: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+    field: 'show_spotify_status'
+  },
+  wallpaperURL: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'wallpaper_url',
+    defaultValue: null
+  },
+}, {
+  tableName: 'users',
+  underscored: true,
+  // validate: {
+  //   mustHaveAuthMethod() {
+  //     if (!this.passwordHash && !this.spotifyId && !this.auth0Id) {
+  //       throw new Error('User must have at least one authentication method');
+  //     }
+  //   }
+  //}
 });
 
-// Instance method to check password
 User.prototype.checkPassword = function (password) {
   if (!this.passwordHash) {
-    return false; // Auth0 users don't have passwords
+    return false;
   }
   return bcrypt.compareSync(password, this.passwordHash);
 };
 
-// Class method to hash password
 User.hashPassword = function (password) {
   return bcrypt.hashSync(password, 10);
+};
+
+User.prototype.isSpotifyTokenValid = function () {
+  return (
+    this.spotifyAccessToken &&
+    this.spotifyTokenExpiresAt &&
+    new Date() < this.spotifyTokenExpiresAt
+  );
 };
 
 module.exports = User;
